@@ -1,6 +1,6 @@
 import pandas as pd
 
-# 1. Load re-annotated Biobank data
+# Load re-annotated Biobank data
 mane = pd.read_csv('/slade/home/mr935/data/biobank_data/samples/updated/splice_mane_filtered_ukb24310.vep.tsv', sep="\t", na_values=['-'], index_col=False)
 cx = pd.read_csv('/slade/home/mr935/data/biobank_data/samples/updated/splice_mane_filtered_ukb24310_cX.vep.tsv', sep="\t", na_values=['-'], index_col=False)
 cy = pd.read_csv('/slade/home/mr935/data/biobank_data/samples/updated/splice_mane_filtered_ukb24310_cY.vep.tsv', sep="\t", na_values=['-'], index_col=False)
@@ -8,7 +8,7 @@ cy = pd.read_csv('/slade/home/mr935/data/biobank_data/samples/updated/splice_man
 cx = cx[['#Uploaded_variation', 'SpliceAI_Pred']]
 cy = cy[['#Uploaded_variation', 'SpliceAI_Pred']]
 
-# 2. Reformat ChrX,Y to match autosomal data
+# Reformat ChrX,Y to match autosomal data
 fix_mane = pd.merge(mane, cx, on='#Uploaded_variation', how='left', suffixes=('_original', '_correct'))
 fix_mane.loc[fix_mane['variantID'].str.contains('chrX'), 'SpliceAI_pred'] = fix_mane.loc[fix_mane['variantID'].str.contains('chrX'), 'SpliceAI_Pred']
 fix_mane.drop('SpliceAI_Pred', axis=1, inplace=True)
@@ -19,7 +19,7 @@ fix_mane.drop('SpliceAI_Pred', axis=1, inplace=True)
 
 clean_mane = fix_mane.copy()
 
-# 3. Clean annotations to reflect the MANE SELECT transcript
+# Clean annotations to reflect the MANE SELECT transcript
 def clean_spliceAI(row):
     splice = row['SpliceAI_pred']
     feature = row['Feature']
@@ -34,7 +34,7 @@ def clean_spliceAI(row):
 
 clean_mane['SpliceAI_pred'] = clean_mane.apply(clean_spliceAI, axis=1)
 
-# 4. Filter out genes missing valid SpliceAI scores
+# Filter out genes missing valid SpliceAI scores
 invalid_mask = clean_mane['SpliceAI_pred'].astype(str).str.split('|').str.len() < 3
 genes_to_filter = clean_mane[invalid_mask]['SYMBOL'].unique()
 
