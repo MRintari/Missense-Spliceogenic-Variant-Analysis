@@ -40,5 +40,46 @@ genes_to_filter = clean_mane[invalid_mask]['SYMBOL'].unique()
 
 clean_mane = clean_mane[~(clean_mane['SYMBOL'].isin(genes_to_filter))]
 
-clean_mane.to_parquet('clean_mane.parquet')
+# Extract SpliceAI Scores from VEP annotations
+def extract_scores(row):
+    spliceai = row['SpliceAI_pred']
+    spliceai = spliceai.split('|')
+    return {
+        'SpliceAI_DS_AG': float(spliceai[2]),
+        'SpliceAI_DS_AL': float(spliceai[3]),
+        'SpliceAI_DS_DG': float(spliceai[4]),
+        'SpliceAI_DS_DL': float(spliceai[5]),
+        'SpliceAI_DP_AG': int(spliceai[6]),
+        'SpliceAI_DP_AL': int(spliceai[7]),
+        'SpliceAI_DP_DG': int(spliceai[8]),
+        'SpliceAI_DP_DL': int(spliceai[9])
+    }
 
+tmp = clean_mane.apply(extract_scores, axis=1)
+clean_mane = clean_mane.join(tmp.apply(pd.Series))
+clean_mane.drop('SpliceAI_pred', axis=1, inplace=True)
+
+# Find highest splice score
+def high_splice(row):
+    scores = ['SpliceAI_DS_AG', 'SpliceAI_DS_AL', 'SpliceAI_DS_DG', 'SpliceAI_DS_DL']
+    
+    return max(list(row[scores]))
+clean_mane['Max_SpliceAI_Score'] = clean_mane.apply(high_splice, axis=1)
+
+# Find respective column for high splice score
+scores = ['SpliceAI_DS_AG', 'SpliceAI_DS_AL', 'SpliceAI_DS_DG', 'SpliceAI_DS_DL']
+score_match = clean_mane[scores] == clean_mane['Max_SpliceAI_Score'].values[:, None]
+high_column = score_match.idxmax(axis=1)
+clean_mane['Max_SpliceAI_Column'] = np.where(score_match.any(axis=1), high_column, np.nan)
+
+# Find position affected by high splice score
+def high_position(row):
+    score = row['Max_SpliceAI_Column']
+    position_column = score.replace('DS', 'DP')
+    position = row[position_column]
+
+    return position
+
+clean_mane['Max_SpliceAI_Position'] = clean_mane.apply(high_position, axis=1)
+
+clean_mane.to_parquet('clean_mane.parquet')
