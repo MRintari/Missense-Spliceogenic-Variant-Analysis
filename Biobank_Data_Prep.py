@@ -39,3 +39,6 @@ invalid_mask = clean_mane['SpliceAI_pred'].astype(str).str.split('|').str.len() 
 genes_to_filter = clean_mane[invalid_mask]['SYMBOL'].unique()
 
 clean_mane = clean_mane[~(clean_mane['SYMBOL'].isin(genes_to_filter))]
+
+clean_mane.to_parquet('clean_mane.parquet')
+
