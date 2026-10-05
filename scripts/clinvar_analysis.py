@@ -41,3 +41,11 @@ def get_percs(df, clinvar):
 
 for sig_df, sig in zip(sig_dfs, clnsigs):
     get_percs(sig_df, sig)
+
+# Load DDG2P PanelApp Data
+ddg2p = pd.read_csv("/slade/home/mr935/data/DDG2P.tsv", sep='\t')
+# Filter for only Green genes
+ddg2p = ddg2p[ddg2p['Sources(; separated)'].str.contains('Green')]
+
+dd_vus_missense = clean_vus_missense[clean_vus_missense['gene'].isin(ddg2p['Gene Symbol'])]
+dd_vus_missense.to_csv("/slade/home/mr935/data/filt_vus_mis.csv")
