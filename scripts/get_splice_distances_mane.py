@@ -52,6 +52,8 @@ clean_mane['Nearest_Site'] = np.where(clean_mane['Distance_Donor'] <
                                       clean_mane['Distance_Acceptor'],
                                       'Donor', 'Acceptor')
 
+clean_mane.to_parquet("clean_mane-all_splice.parquet", index=False)
+
 # Drop PyRange Columns
 clean_mane.drop(['Distance_Donor', 'Start_b_Donor', 'End_b_Donor',
                  'Distance_Acceptor', 'Start_b_Acceptor', 'End_b_Acceptor'],
